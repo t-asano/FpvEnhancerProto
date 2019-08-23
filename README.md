@@ -10,7 +10,7 @@
 
 1. FPV受信機を接続
 2. シミュレータードングルを接続
-2. Chromeでデモサイト https://t-asano.github.io/xxx/ に接続
+2. Chromeでデモサイト https://t-asano.github.io/FpvEnhancerProto/ に接続
 
 ## ライセンス
 
