@@ -1,0 +1,12 @@
+* {
+  font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+}
+
+body {
+  background-color: black;
+  color: white;
+}
+
+#fpv_source {
+  display: none;
+}
