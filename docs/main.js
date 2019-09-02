@@ -3,8 +3,11 @@
 /* ---------- system ---------- */
 
 const SYS_VER = '0.0.1';
-const ELMID_VERSION = 'version';
+const SYS_TITLE = 'FPV Enhancer (prototype) Ver.' + SYS_VER;
 const DEBUG_ENABLED = false;
+
+var sysFrameRate, sysSkipFrame;
+var fpsCalcFrames, fpsCalcStTime, fpsCalcEdTime;
 
 var getElement = function (id) {
   var obj = document.getElementById(id);
@@ -14,23 +17,69 @@ var getElement = function (id) {
   return obj;
 }
 
+var drawSysStat = function () {
+  fpvCanvas.fillStyle = 'white';
+  fpvCanvas.font = '24px arial';
+  fpvCanvas.fillText(SYS_TITLE, 5, 29);
+  fpvCanvas.fillStyle = 'yellow';
+  fpvCanvas.font = '16px arial';
+  fpvCanvas.fillText(sysFrameRate + ' fps',
+                     VIDEO_WIDTH - 50, VIDEO_HEIGHT - 5);
+}
+
 var update = function () {
+  // framerate
+  if (sysSkipFrame == true) {
+    sysSkipFrame = false;
+    window.requestAnimationFrame(update);
+    return;
+  }
+  var t1, t2;
+  t1 = new Date().getTime();
+  fpsCalcEdTime = t1;
+  fpsCalcFrames++;
+  // main
   readPropo();
-  drawCanvas();
+  drawCanvasVideo();
+  detectArMarkers();
+  drawCanvasLayer();
+  // framerate
+  if (fpsCalcEdTime - fpsCalcStTime >= 1000) {
+    sysFrameRate = fpsCalcFrames;
+    fpsCalcFrames = 0;
+    fpsCalcStTime = fpsCalcEdTime;
+  }
+  /* xxx for debug
+  t2 = new Date().getTime();
+  console.log(t2 - t1); // xxx for debug
+  if ((t2 - t1) < 17) {
+    sysSkipFrame = true; // xxx for debug
+  }
+  */
   window.requestAnimationFrame(update);
 }
 
-var init = function () {
-  getElement(ELMID_VERSION).innerText = 'Ver.' + SYS_VER;
+var initSystem = function () {
+  // environment
   var ua = window.navigator.userAgent.toLowerCase();
   if (ua.indexOf('chrome') === -1) {
     console.error('invalid user-agent: ' + ua);
     alert('Please use Google Chrome');
     return;
   }
+  // fps
+  sysSkipFrame = false;
+  sysFrameRate = 0;
+  fpsCalcFrames = 0;
+}
+
+var init = function () {
+  initSystem();
   initVideo();
   initCanvas();
   initPropo();
+  initAr();
+  fpsCalcStTime = new Date().getTime();
   window.requestAnimationFrame(update);
 }
 
@@ -43,9 +92,13 @@ window.onload = function () {
 const ELMID_FPVCANV = 'fpv_canvas';
 var fpvCanvas;
 
-var drawCanvas = function () {
+var drawCanvasVideo = function () {
   drawVideo();
+}
+var drawCanvasLayer = function () {
+  drawAr();
   drawPropo();
+  drawSysStat();
 }
 
 var initCanvas = function () {
@@ -115,7 +168,6 @@ var initVideo = function () {
         }
       });
       if (videoFound == false) {
-        console.error('cannot find fpv receiver');
         alert('No FPV receiver');
       }
     })
@@ -230,4 +282,62 @@ var initPropo = function () {
   pitchVal = 0;
   thrVal = -1;
   yawVal = 0;
+}
+
+/* ---------- AR ---------- */
+
+var arDetector, arMarkers;
+
+var drawArCorners = function (context, markers) {
+  var corners, corner, i, j;
+  context.lineWidth = 3;
+  for (i = 0; i !== markers.length; ++i) {
+    corners = markers[i].corners;
+
+    context.strokeStyle = "red";
+    context.beginPath();
+    for (j = 0; j !== corners.length; ++j) {
+      corner = corners[j];
+      context.moveTo(corner.x, corner.y);
+      corner = corners[(j + 1) % corners.length];
+      context.lineTo(corner.x, corner.y);
+    }
+    context.stroke();
+    context.closePath();
+
+    context.strokeStyle = "green";
+    context.strokeRect(corners[0].x - 2, corners[0].y - 2, 4, 4);
+  }
+}
+
+var drawArIds = function (context, markers) {
+  var corners, corner, x, y, i, j;
+  context.strokeStyle = "blue";
+  context.lineWidth = 1;
+  for (i = 0; i !== markers.length; ++i) {
+    corners = markers[i].corners;
+    x = Infinity;
+    y = Infinity;
+    for (j = 0; j !== corners.length; ++j) {
+      corner = corners[j];
+      x = Math.min(x, corner.x);
+      y = Math.min(y, corner.y);
+    }
+    context.strokeText(markers[i].id, x, y)
+  }
+}
+
+var drawAr = function () {
+  drawArCorners(fpvCanvas, arMarkers);
+  drawArIds(fpvCanvas, arMarkers);
+}
+
+var detectArMarkers = function () {
+  var imgdata = fpvCanvas.getImageData(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
+  arMarkers = arDetector.detect(imgdata);  
+  // console.log(arMarkers); // xxx for debug
+}
+
+var initAr = function () {
+  arDetector = new AR.Detector();
 }

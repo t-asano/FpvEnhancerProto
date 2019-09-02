@@ -14,4 +14,11 @@
 
 ## ライセンス
 
+### FPV Enhancer (prototype)
+
 MIT License
+
+### js-aruco
+
+https://raw.githubusercontent.com/jcmellado/js-aruco
+
