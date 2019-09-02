@@ -2,7 +2,7 @@
 
 /* ---------- system ---------- */
 
-const SYS_VER = '0.0.1';
+const SYS_VER = '0.0.2';
 const SYS_TITLE = 'FPV Enhancer (prototype) Ver.' + SYS_VER;
 const DEBUG_ENABLED = false;
 
